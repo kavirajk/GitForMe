@@ -27,3 +27,8 @@ def get_latest_time():
     rows=db.select('commits',order='time DESC')
     for row in rows:
         return row.time
+
+
+def put_token(userid,token):
+    db.insert('users',userid=userid,token=token)
+    

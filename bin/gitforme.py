@@ -3,6 +3,7 @@ from db_model import *
 import requests
 import json
 
+
 urls=(
     '/','Login',
     '/Fetch','Fetch'
@@ -20,27 +21,32 @@ class Login:
 
 class Fetch:
 
+    token=None
+
+    def GET(self):
+        url="https://github.com/login/oauth/access_token"
+        code=web.input().code
+        data={'client_id':'483f8af623f62e704356',
+              'client_secret':'4e0fbf477a02c2a05f37cfb39ac73572af4a3563',
+              'code':code}
+        header={'Accept':'application/json'}
+        res=requests.post(url,data=data,headers=header)
+        Fetch.token= res.json()['access_token']
+        
+        return render.view()
+ 
     def POST(self):
+        #import pdb;pdb.set_trace()
         url="https://api.github.com/user/repos"
-        userid=web.input().userid
-        password=web.input().password
-
-        print userid,password
-
         # generate token
-
-        url="https://api.github.com/authorizations"
-        auth=(userid,password)
-
-        data={"scopes":["repos"]}
-
-#        response=requests.post(url,data=json.dumps(data),auth=auth)
-
-#    token=response['token']
-
-        print token
-                
+        userid=web.input().userid
         token=get_token(userid)
+        if(token==None):
+            put_token(userid,Fetch.token)
+#        token=get_token(userid)
+        
+        #token=Fetch.token
+
         token="token "+token
         header={'Authorization':token}
 
