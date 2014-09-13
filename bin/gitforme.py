@@ -22,12 +22,24 @@ class Fetch:
 
     def POST(self):
         url="https://api.github.com/user/repos"
-        userid=web.input("userid")
-        password=web.input("password")
+        userid=web.input().userid
+        password=web.input().password
 
         print userid,password
 
-        
+        # generate token
+
+        url="https://api.github.com/authorizations"
+        auth=(userid,password)
+
+        data={"scopes":["repos"]}
+
+#        response=requests.post(url,data=json.dumps(data),auth=auth)
+
+#    token=response['token']
+
+        print token
+                
         token=get_token(userid)
         token="token "+token
         header={'Authorization':token}
