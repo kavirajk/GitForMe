@@ -1,4 +1,6 @@
+$def with (userid)
+
 <form action="/Fetch" method="POST">
-  <input type="text" name="userid" placeholder="userid">
-  <input type="submit" value="View">
+  <input name="userid" type="hidden" value=$userid>
+  <input type="submit" value="View Commits">
 </form>

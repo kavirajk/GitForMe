@@ -4,7 +4,7 @@ $def with (commits)
 
   <tr>
     <td>sha</td>
-    <td>userid</td>
+    <td>user</td>
     <td>repo</td>
     <td>time</td>
     <td>message</td>
@@ -13,7 +13,7 @@ $def with (commits)
 $for commit in commits:
     <tr>
       <td>$commit.sha</td>
-      <td>$commit.userid</td>
+      <td>$commit.user</td>
       <td>$commit.repo</td>
       <td>$commit.time</td>
       <td>$commit.message</td>

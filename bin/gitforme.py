@@ -1,11 +1,17 @@
 import web
+import thread
 from db_model import *
 import requests
 import json
+from auth_helpers import *
+from fetch_helpers import *
+from multiprocessing import Pool # for fetching git commits in background 
+
 
 
 urls=(
-    '/','Login',
+    '/','Index',
+    '/Login','Login',
     '/Fetch','Fetch'
 )
 
@@ -13,93 +19,53 @@ urls=(
 app=web.application(urls,globals())
 render=web.template.render("templates")
 
-class Login:
-
+class Index:
     def GET(self):
         return render.login()
 
 
-class Fetch:
+class Login:
 
-    token=None
+    def __init__(self):
+        self.userid=None
+        self.token=None
 
     def GET(self):
-        url="https://github.com/login/oauth/access_token"
+        
         code=web.input().code
-        data={'client_id':'483f8af623f62e704356',
-              'client_secret':'4e0fbf477a02c2a05f37cfb39ac73572af4a3563',
-              'code':code}
-        header={'Accept':'application/json'}
-        res=requests.post(url,data=data,headers=header)
-        Fetch.token= res.json()['access_token']
-        
-        return render.view()
- 
+        client_id='483f8af623f62e704356'
+        client_secret='4e0fbf477a02c2a05f37cfb39ac73572af4a3563'
+
+        self.token=get_oauth_token(client_id,client_secret,code)
+        self.userid=get_userid(self.token)
+
+
+        if userid_exists(self.userid)!=True:
+            put_token(self.userid,self.token)
+
+        keep_fetching_commits(self.userid,self.token)
+
+        return render.view(self.userid)
+
+class Fetch:
+
+    def __init__(self):
+        self.userid=None
+
     def POST(self):
-        #import pdb;pdb.set_trace()
-        url="https://api.github.com/user/repos"
-        # generate token
-        userid=web.input().userid
-        token=get_token(userid)
-        if(token==None):
-            put_token(userid,Fetch.token)
-#        token=get_token(userid)
-        
-        #token=Fetch.token
-
-        token="token "+token
-        header={'Authorization':token}
-
-        # getting the user repos using OAuth token
-
-        repos=requests.get(url,headers=header)
-        r_names=[]
-        for repo in repos.json():
-            r_names.append(repo['name'].encode('ascii'))
-
-        # getting commit msg for all the repos
-
-        c_url="https://api.github.com/repos/"+userid
-        all_commits=[]
-
-        ### Testing only ###
-
-        r_names=['speakup']
-
-
-        time=get_latest_time()
-
-        
-        for r_name in r_names:
-            if time!=None:
-                r_url=c_url+"/"+r_name+"/commits?since="+time.isoformat()
-            else:
-                r_url=c_url+"/"+r_name+"/commits"
-                
-            commits=requests.get(r_url,headers=header).json()
-            all_commits.append(commits)
-
-        
-        #putting the commits into the db
-#        return all_commits[0][0]
-
-        put_commits(commits)
-
-
-        # fetching the updated data from db and rendering it
-
-        commits=get_commits()
-
-
+        self.userid=web.input().userid
+        if self.userid == None:
+            return "UnAuthorized"
+            
+        commits=get_commits(self.userid)
         return render.fetch(commits)
-        
- 
 
-
+def keep_fetching():
+    while True:
+        fetch_commits()
+        time.sleep(60)
 
 if __name__=='__main__':
-    app.run()
-
-    while(True):
-        web.seeother("/Fetch")
-        sleep(300)
+    thread.start_new_thread(app.run,())
+    keep_fetching()
+    
